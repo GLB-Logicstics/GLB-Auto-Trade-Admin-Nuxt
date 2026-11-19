@@ -1,0 +1,34 @@
+$primary: #00b8fb;
+$primary-dark: #0096cc;
+$primary-soft: #e6f7fe;
+$navy: #16202c;
+$navy-light: #222f3e;
+$accent: #e57373;
+$accent-soft: #fdeeee;
+$danger: #c5221f;
+$success: #1e7b34;
+$success-soft: #e6f4ea;
+$warning: #b26a00;
+$warning-soft: #fff4e0;
+
+$bg: #f4f7fb;
+$surface: #ffffff;
+$border: #e3e8ef;
+$text: #16202c;
+$muted: #5f6368;
+
+$font: 'Poppins', sans-serif;
+$font-heading: 'Montserrat', sans-serif;
+
+$radius: 10px;
+$radius-lg: 14px;
+$shadow: 0 1px 3px rgba(22, 32, 44, 0.06), 0 8px 24px rgba(22, 32, 44, 0.04);
+
+$sidebar: 260px;
+$topbar: 68px;
+
+$breakpoints: (
+  md: 768px,
+  lg: 1024px,
+  xl: 1280px,
+);
