@@ -101,7 +101,10 @@
 
       <section class="card">
         <div class="card__head">
-          <h2>Əlavə xərclər</h2>
+          <div>
+            <h2>Əlavə xərclər</h2>
+            <p class="muted">Kalkulyatorda müştərinin seçə biləcəyi əlavə xidmətlər (sığorta, sənəd və s.)</p>
+          </div>
           <button type="button" class="btn btn--light btn--sm" @click="addExtra">
             <i class="bi bi-plus-lg" />
             Əlavə et
@@ -111,7 +114,6 @@
           <table class="table">
             <thead>
               <tr>
-                <th>Kod</th>
                 <th>Ad</th>
                 <th>Qiymət ($)</th>
                 <th />
@@ -119,7 +121,6 @@
             </thead>
             <tbody>
               <tr v-for="(item, index) in tariffs.extraCosts" :key="index">
-                <td><input v-model.trim="item.id" class="input input--sm" /></td>
                 <td><input v-model="item.label" class="input input--sm" /></td>
                 <td><input v-model.number="item.price" class="input input--sm" type="number" /></td>
                 <td class="table__actions">

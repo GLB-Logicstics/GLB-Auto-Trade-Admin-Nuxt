@@ -33,6 +33,17 @@
             <span class="field__label">Tünd fon üçün loqo</span>
             <ImageInput v-model="site.logoDark" />
           </div>
+          <div class="field is-wide">
+            <label class="switch">
+              <input v-model="site.registrationOpen" type="checkbox" />
+              <span class="switch__track" />
+              Saytda hər kəs özü qeydiyyatdan keçə bilsin
+            </label>
+            <p class="field__help">
+              Söndürülübsə, müştəri və diler hesablarını yalnız "İstifadəçilər" bölməsində siz yaradırsınız. Dilerlər heç vaxt özü
+              qeydiyyatdan keçmir.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -168,6 +179,7 @@ interface SiteSettings {
   logo: string
   logoDark: string
   about: string
+  registrationOpen?: boolean
   contact: {
     phone: string
     phoneDisplay: string

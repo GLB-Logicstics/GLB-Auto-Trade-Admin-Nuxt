@@ -3,31 +3,44 @@
     <div class="page-head">
       <div>
         <h1>Yerli bazar qiymətləri</h1>
-        <p>
-          Azərbaycan və Gürcüstan bazarında orta qiymətlər. Saytda "bazar qiymətindən ucuz" və kataloq müqayisəsi bu cədvəldən
-          götürülür
-        </p>
+        <p>Saytda "bazar qiymətindən ucuz" yazısı və kataloq müqayisəsi bu qiymətlərdən götürülür</p>
       </div>
     </div>
 
     <section class="card block">
-      <div class="card__head"><h2>Qiymət əlavə et və ya yenilə</h2></div>
-      <form class="card__body add-form" @submit.prevent="add">
-        <select v-model="form.country" class="input">
-          <option v-for="option in countries" :key="option.value" :value="option.value">{{ option.label }}</option>
-        </select>
-        <input v-model.trim="form.make" class="input" placeholder="Marka" />
-        <input v-model.trim="form.model" class="input" placeholder="Model" />
-        <input v-model.number="form.year" class="input" type="number" placeholder="İl" />
-        <input v-model.number="form.price" class="input" type="number" placeholder="Qiymət ($)" />
-        <input v-model.trim="form.source" class="input" placeholder="Mənbə (turbo.az, myauto.ge)" />
-        <button type="submit" class="btn"><i class="bi bi-plus-lg" /> Saxla</button>
-      </form>
+      <div class="card__head">
+        <h2>Avtomatik yeniləmə</h2>
+        <label class="switch">
+          <input type="checkbox" :checked="sync.enabled" @change="toggle" />
+          <span class="switch__track" />
+          Gündə bir dəfə
+        </label>
+      </div>
+      <div class="card__body sync">
+        <p>
+          Sistem kataloqdakı və satışdakı hər avtomobil üçün turbo.az (Azərbaycan) və myauto.ge (Gürcüstan) elanlarına baxır və
+          orta qiyməti özü yazır. Ən azı 3 elan olmalıdır.
+        </p>
+        <p class="muted">
+          Son yeniləmə: <b>{{ sync.lastRun ? formatDate(sync.lastRun) : 'hələ olmayıb' }}</b>
+          <template v-if="sync.results.length"> · {{ okCount }} qiymət tapıldı, {{ sync.results.length - okCount }} tapılmadı</template>
+        </p>
+        <div class="sync__buttons">
+          <button type="button" class="btn" :disabled="sync.running" @click="start">
+            <i class="bi" :class="sync.running ? 'bi-hourglass-split' : 'bi-arrow-repeat'" />
+            {{ sync.running ? 'Yenilənir... (bir neçə dəqiqə)' : 'İndi yenilə' }}
+          </button>
+          <button v-if="failed.length" type="button" class="btn btn--light" @click="showFailed = !showFailed">
+            <i class="bi bi-exclamation-circle" /> Tapılmayanlar ({{ failed.length }})
+          </button>
+        </div>
+        <ul v-if="showFailed" class="sync__failed">
+          <li v-for="(item, index) in failed" :key="index">
+            <b>{{ item.source }}</b> · {{ item.make }} {{ item.model }} {{ item.year }} — <span class="muted">{{ item.error }}</span>
+          </li>
+        </ul>
+      </div>
     </section>
-
-    <SheetImport ref="importer" class="block" :columns="importColumns" :busy="importing" @import="importRows">
-      <template #help>Ölkə sütununda "aze" / "geo" və ya "Azərbaycan" / "Gürcüstan" yazın.</template>
-    </SheetImport>
 
     <section class="card">
       <div class="toolbar">
@@ -72,9 +85,6 @@
               <td class="muted">{{ formatDate(row.updated_at) }}</td>
               <td>
                 <div class="table__actions">
-                  <button type="button" class="btn btn--light btn--icon btn--sm" title="Redaktə" @click="edit(row)">
-                    <i class="bi bi-pencil" />
-                  </button>
                   <button type="button" class="btn btn--danger btn--icon btn--sm" title="Sil" @click="remove(row)">
                     <i class="bi bi-trash" />
                   </button>
@@ -96,12 +106,25 @@ import { countries } from '~/config/options'
 import { useToastStore } from '~/stores/toast'
 import { apiError, formatDate, formatMoney } from '~/utils/format'
 import type { MarketPrice } from '~/types'
-import type { SheetColumn } from '~/utils/sheet'
 
 let timer: ReturnType<typeof setTimeout> | undefined
+let poll: ReturnType<typeof setTimeout> | undefined
 
-function emptyForm() {
-  return { country: 'aze', make: '', model: '', year: new Date().getFullYear(), price: 0, source: '' }
+interface SyncResult {
+  source: string
+  make: string
+  model: string
+  year: number
+  count: number
+  price: number
+  error: string
+}
+
+interface SyncStatus {
+  enabled: boolean
+  running: boolean
+  lastRun: string
+  results: SyncResult[]
 }
 
 export default defineComponent({
@@ -117,23 +140,30 @@ export default defineComponent({
       country: '',
       search: '',
       loading: true,
-      importing: false,
       countries,
-      form: emptyForm(),
       tabs: [{ label: 'Hamısı', value: '' }, ...countries],
-      importColumns: [
-        { key: 'country', label: 'Ölkə', names: ['Ölkə', 'Country', 'Olke'], type: 'text', required: true },
-        { key: 'make', label: 'Marka', names: ['Marka', 'Make', 'Brand'], type: 'text', required: true },
-        { key: 'model', label: 'Model', names: ['Model'], type: 'text', required: true },
-        { key: 'year', label: 'İl', names: ['İl', 'Il', 'Year'], type: 'number' },
-        { key: 'price', label: 'Qiymət', names: ['Qiymət', 'Qiymet', 'Price', 'USD'], type: 'number' },
-        { key: 'source', label: 'Mənbə', names: ['Mənbə', 'Menbe', 'Source'], type: 'text' },
-      ] as SheetColumn[],
+      sync: { enabled: true, running: false, lastRun: '', results: [] } as SyncStatus,
+      showFailed: false,
     }
+  },
+
+  computed: {
+    okCount(): number {
+      return this.sync.results.filter((item) => !item.error).length
+    },
+
+    failed(): SyncResult[] {
+      return this.sync.results.filter((item) => item.error)
+    },
   },
 
   mounted() {
     this.load()
+    this.loadSync()
+  },
+
+  beforeUnmount() {
+    clearTimeout(poll)
   },
 
   methods: {
@@ -160,38 +190,26 @@ export default defineComponent({
       timer = setTimeout(() => this.load(), 300)
     },
 
-    edit(row: MarketPrice) {
-      this.form = { country: row.country, make: row.make, model: row.model, year: row.year, price: row.price, source: row.source }
-      window.scrollTo({ top: 0, behavior: 'smooth' })
+    async loadSync() {
+      const wasRunning = this.sync.running
+      this.sync = await this.$api<SyncStatus>('/market-sync')
+      if (wasRunning && !this.sync.running) this.load()
+      if (this.sync.running) poll = setTimeout(() => this.loadSync(), 5000)
     },
 
-    async add() {
+    async start() {
       try {
-        await this.$api('/market-prices', { method: 'POST', body: this.form })
-        useToastStore().show('Qiymət yadda saxlandı')
-        this.form = emptyForm()
-        this.load()
+        await this.$api('/market-sync', { method: 'POST' })
+        this.sync.running = true
+        useToastStore().show('Yeniləmə başladı')
+        poll = setTimeout(() => this.loadSync(), 5000)
       } catch (error) {
         useToastStore().show(apiError(error), 'error')
       }
     },
 
-    async importRows(rows: Record<string, string | number>[]) {
-      const country = (value: unknown) => (/^(geo|ge|gür|gur)/i.test(String(value).trim()) ? 'geo' : 'aze')
-      this.importing = true
-      try {
-        const result = await this.$api<{ saved: number; skipped: number }>('/market-prices/import', {
-          method: 'POST',
-          body: { rows: rows.map((row) => ({ ...row, country: country(row.country) })) },
-        })
-        const importer = this.$refs.importer as { clear: () => void }
-        importer.clear()
-        useToastStore().show(`${result.saved} sətir yükləndi${result.skipped ? `, ${result.skipped} keçildi` : ''}`)
-        this.load()
-      } catch (error) {
-        useToastStore().show(apiError(error), 'error')
-      }
-      this.importing = false
+    async toggle() {
+      this.sync = await this.$api<SyncStatus>('/market-sync', { method: 'PUT', body: { enabled: !this.sync.enabled } })
     },
 
     async remove(row: MarketPrice) {
@@ -214,12 +232,25 @@ export default defineComponent({
   margin-bottom: 24px;
 }
 
-.add-form {
-  display: grid;
-  gap: 12px;
+.sync {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 
-  @include up(lg) {
-    grid-template-columns: 140px 1fr 1fr 100px 120px 1fr auto;
+  &__buttons {
+    display: flex;
+    gap: 10px;
+  }
+
+  &__failed {
+    max-height: 280px;
+    overflow: auto;
+    font-size: 13px;
+
+    li {
+      padding: 6px 0;
+      border-bottom: 1px solid $border;
+    }
   }
 }
 </style>

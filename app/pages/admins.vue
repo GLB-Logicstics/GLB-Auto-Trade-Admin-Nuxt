@@ -125,8 +125,9 @@ export default defineComponent({
       loading: true,
       creating: false,
       form: { name: '', email: '', password: '', role: 'editor' },
-      roles: [
-        { value: 'admin', label: 'Admin', text: 'Hər şey: komanda, rollar, jurnal, tərcümələr, qiymətlər və kontent' },
+      allRoles: [
+        { value: 'developer', label: 'Developer', text: 'Hər şey, üstəlik menyular, dillər və texniki ayarlar' },
+        { value: 'admin', label: 'Admin', text: 'Saytın bütün idarəsi: müraciətlər, hesablar, kontent, qiymətlər, komanda, tərcümələr, jurnal' },
         { value: 'manager', label: 'Menecer', text: 'Müraciətlər, istifadəçilər və dilerlər, kontent, qiymətlər' },
         { value: 'editor', label: 'Redaktor', text: 'Kontent, sayt ayarları, menyular, tərcümələr' },
       ],
@@ -134,6 +135,11 @@ export default defineComponent({
   },
 
   computed: {
+    roles(): { value: string; label: string; text: string }[] {
+      const isDeveloper = useAuthStore().admin?.role === 'developer'
+      return this.allRoles.filter((role) => isDeveloper || role.value !== 'developer')
+    },
+
     me(): number {
       return useAuthStore().admin?.id || 0
     },

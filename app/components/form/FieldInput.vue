@@ -52,18 +52,25 @@
       @update:model-value="emitValue"
     />
 
-    <textarea
+    <ListInput
       v-else-if="field.type === 'lines'"
-      :id="id"
-      v-model="text"
-      class="input input--area"
-      @input="emitLines"
+      :model-value="Array.isArray(modelValue) ? (modelValue as string[]) : []"
+      :multiline="field.multiline"
+      :add-label="field.addLabel || 'Əlavə et'"
+      @update:model-value="emitValue"
     />
 
-    <template v-else-if="field.type === 'json'">
-      <textarea :id="id" v-model="text" class="input input--area input--code" spellcheck="false" @input="emitJson" />
-      <p v-if="jsonError" class="error-text">JSON səhvdir: {{ jsonError }}</p>
-    </template>
+    <SectionsInput
+      v-else-if="field.type === 'sections'"
+      :model-value="Array.isArray(modelValue) ? (modelValue as any[]) : []"
+      @update:model-value="emitValue"
+    />
+
+    <StepsInput
+      v-else-if="field.type === 'steps'"
+      :model-value="Array.isArray(modelValue) ? (modelValue as any[]) : []"
+      @update:model-value="emitValue"
+    />
 
     <p v-if="field.help" class="field__help">{{ field.help }}</p>
   </div>
@@ -83,31 +90,14 @@ export default defineComponent({
 
   emits: ['update:modelValue'],
 
-  data() {
-    return {
-      text: '',
-      jsonError: '',
-    }
-  },
-
   computed: {
     id(): string {
       return `field-${this.field.key.replace(/\./g, '-')}`
     },
 
     isLarge(): boolean {
-      return ['images', 'lines', 'json'].includes(this.field.type)
+      return ['images', 'lines', 'sections', 'steps'].includes(this.field.type)
     },
-  },
-
-  created() {
-    if (this.field.type === 'lines') {
-      this.text = Array.isArray(this.modelValue) ? this.modelValue.join('\n') : ''
-    }
-
-    if (this.field.type === 'json') {
-      this.text = JSON.stringify(this.modelValue ?? null, null, 2)
-    }
   },
 
   methods: {
@@ -115,22 +105,6 @@ export default defineComponent({
       this.$emit('update:modelValue', value)
     },
 
-    emitLines() {
-      const lines = this.text
-        .split('\n')
-        .map((line) => line.trim())
-        .filter(Boolean)
-      this.emitValue(lines)
-    },
-
-    emitJson() {
-      try {
-        this.emitValue(JSON.parse(this.text))
-        this.jsonError = ''
-      } catch (error) {
-        this.jsonError = (error as Error).message
-      }
-    },
   },
 })
 </script>

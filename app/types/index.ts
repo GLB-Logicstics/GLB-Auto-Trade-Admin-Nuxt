@@ -20,7 +20,8 @@ export type FieldType =
   | 'image'
   | 'images'
   | 'lines'
-  | 'json'
+  | 'sections'
+  | 'steps'
 
 export interface Field {
   key: string
@@ -31,6 +32,8 @@ export interface Field {
   wide?: boolean
   translate?: boolean
   optionsFrom?: 'cities' | 'partTypes'
+  multiline?: boolean
+  addLabel?: string
 }
 
 export interface FieldGroup {

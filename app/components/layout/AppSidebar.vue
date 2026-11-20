@@ -44,6 +44,7 @@ interface SidebarLink {
   label: string
   to: string
   icon: string
+  area?: string
 }
 
 interface SidebarGroup {
@@ -62,6 +63,7 @@ function collectionLinks(names: string[]): SidebarLink[] {
 const GROUPS: SidebarGroup[] = [
   { title: 'Əsas', area: 'dashboard', links: [{ label: 'İdarə paneli', to: '/', icon: 'bi-grid-1x2' }] },
   { title: 'Müraciətlər', area: 'requests', links: [{ label: 'Müraciətlər', to: '/requests', icon: 'bi-inbox' }] },
+  { title: 'Daşınma', area: 'content', links: collectionLinks(['shipments']) },
   {
     title: 'İstifadəçilər',
     area: 'users',
@@ -87,17 +89,17 @@ const GROUPS: SidebarGroup[] = [
     area: 'settings',
     links: [
       { label: 'Sayt məlumatı', to: '/site', icon: 'bi-building' },
-      { label: 'Menyular', to: '/menus', icon: 'bi-list' },
       { label: 'Ölkə və şəhərlər', to: '/locations', icon: 'bi-geo-alt' },
-      { label: 'Digər ayarlar', to: '/settings', icon: 'bi-sliders' },
+      { label: 'GLB Helper qiymətləri', to: '/settings', icon: 'bi-bar-chart' },
+      { label: 'Menyular', to: '/menus', icon: 'bi-list', area: 'menus' },
     ],
   },
   {
     title: 'Dillər',
     area: 'translations',
     links: [
-      { label: 'Dillər', to: '/languages', icon: 'bi-globe2' },
       { label: 'Tərcümələr', to: '/translations', icon: 'bi-translate' },
+      { label: 'Dillər', to: '/languages', icon: 'bi-globe2', area: 'languages' },
     ],
   },
   { title: 'Komanda', area: 'admins', links: [{ label: 'Adminlər və rollar', to: '/admins', icon: 'bi-shield-lock' }] },
@@ -113,6 +115,8 @@ export default defineComponent({
 
     groups(): SidebarGroup[] {
       return GROUPS.filter((group) => this.can(group.area))
+        .map((group) => ({ ...group, links: group.links.filter((link) => !link.area || this.can(link.area)) }))
+        .filter((group) => group.links.length)
     },
   },
 

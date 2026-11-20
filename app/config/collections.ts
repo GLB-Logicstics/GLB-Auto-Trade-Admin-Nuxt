@@ -180,8 +180,8 @@ export const collections: CollectionConfig[] = [
       {
         title: 'Təsvir və media',
         fields: [
-          { key: 'features', label: 'Xüsusiyyətlər', type: 'lines', help: 'Hər sətirdə bir xüsusiyyət', wide: true, translate: true },
-          { key: 'description', label: 'Təsvir', type: 'lines', help: 'Hər sətir ayrıca abzasdır', wide: true, translate: true },
+          { key: 'features', label: 'Xüsusiyyətlər', type: 'lines', addLabel: 'Xüsusiyyət əlavə et', wide: true, translate: true },
+          { key: 'description', label: 'Təsvir', type: 'lines', multiline: true, addLabel: 'Abzas əlavə et', wide: true, translate: true },
           { key: 'image', label: 'Əsas şəkil', type: 'image', wide: true },
           { key: 'images', label: 'Qalereya', type: 'images', wide: true },
         ],
@@ -372,8 +372,8 @@ export const collections: CollectionConfig[] = [
           { key: 'title', label: 'Ad', type: 'text', translate: true },
           { key: 'icon', label: 'İkon', type: 'text', help: 'Bootstrap Icons adı, məs. bi-truck' },
           { key: 'short', label: 'Qısa təsvir', type: 'textarea', wide: true, translate: true },
-          { key: 'description', label: 'Ətraflı təsvir', type: 'lines', help: 'Hər sətir ayrıca abzasdır', wide: true, translate: true },
-          { key: 'steps', label: 'Mərhələlər', type: 'lines', help: 'Hər sətirdə bir mərhələ', wide: true, translate: true },
+          { key: 'description', label: 'Ətraflı təsvir', type: 'lines', multiline: true, addLabel: 'Abzas əlavə et', wide: true, translate: true },
+          { key: 'steps', label: 'Mərhələlər', type: 'lines', addLabel: 'Mərhələ əlavə et', wide: true, translate: true },
         ],
       },
     ],
@@ -395,14 +395,7 @@ export const collections: CollectionConfig[] = [
         fields: [
           { key: 'title', label: 'Başlıq', type: 'text', translate: true },
           { key: 'subtitle', label: 'Alt başlıq', type: 'textarea', wide: true, translate: true },
-          {
-            key: 'sections',
-            label: 'Bölmələr',
-            type: 'json',
-            help: 'Hər bölmə: { "title": "...", "text": ["abzas 1", "abzas 2"] }',
-            wide: true,
-            translate: true,
-          },
+          { key: 'sections', label: 'Bölmələr', type: 'sections', wide: true, translate: true },
         ],
       },
     ],
@@ -424,7 +417,7 @@ export const collections: CollectionConfig[] = [
         fields: [
           { key: 'title', label: 'Başlıq', type: 'text', wide: true, translate: true },
           { key: 'date', label: 'Tarix', type: 'text', help: 'Format: 02.03.2026' },
-          { key: 'text', label: 'Mətn', type: 'lines', help: 'Hər sətir ayrıca abzasdır', wide: true, translate: true },
+          { key: 'text', label: 'Mətn', type: 'lines', multiline: true, addLabel: 'Abzas əlavə et', wide: true, translate: true },
         ],
       },
     ],
@@ -494,6 +487,45 @@ export const collections: CollectionConfig[] = [
       },
     ],
     empty: () => ({ label: '', value: '', icon: 'bi-gear' }),
+  },
+  {
+    name: 'shipments',
+    label: 'Avtomobil izləmə',
+    single: 'Daşınma',
+    icon: 'bi-geo',
+    hasSlug: false,
+    columns: [
+      { key: 'code', label: 'VIN' },
+      { key: 'lot', label: 'Lot' },
+      { key: 'title', label: 'Avtomobil' },
+    ],
+    groups: [
+      {
+        title: 'Avtomobil',
+        fields: [
+          { key: 'title', label: 'Avtomobil', type: 'text', help: 'Məs. 2021 BMW X5' },
+          { key: 'code', label: 'VIN kodu', type: 'text' },
+          { key: 'lot', label: 'Lot nömrəsi', type: 'text' },
+        ],
+      },
+      {
+        title: 'Daşınma mərhələləri',
+        fields: [{ key: 'steps', label: 'Mərhələlər', type: 'steps', wide: true }],
+      },
+    ],
+    empty: () => ({
+      title: '',
+      code: '',
+      lot: '',
+      steps: [
+        'Hərracda alındı',
+        'Meydançadan götürüldü',
+        'Konteynerə yükləndi',
+        'Dəniz yolunda',
+        'Poti limanı',
+        'Bakıya çatdırıldı',
+      ].map((title) => ({ title, date: 'Gözlənilir', done: false })),
+    }),
   },
 ]
 

@@ -3,9 +3,77 @@
     <div class="page-head">
       <div>
         <h1>İstifadəçilər və dilerlər</h1>
-        <p>Saytda qeydiyyatdan keçənlər, diler müraciətləri və onların sorğuları</p>
+        <p>Müştəri və diler hesabları. Hesabı burada yaradıb e-poçt və şifrəni müştəriyə göndərin</p>
+      </div>
+      <div class="page-head__actions">
+        <button type="button" class="btn" @click="formOpen = !formOpen">
+          <i class="bi" :class="formOpen ? 'bi-x-lg' : 'bi-person-plus'" />
+          {{ formOpen ? 'Bağla' : 'Yeni hesab' }}
+        </button>
       </div>
     </div>
+
+    <section v-if="formOpen" class="card block">
+      <div class="card__head"><h2>Yeni hesab</h2></div>
+      <form class="card__body form-grid" @submit.prevent="create">
+        <div class="field is-wide">
+          <span class="field__label">Hesab növü</span>
+          <div class="tabs">
+            <button type="button" :class="{ 'is-active': form.role === 'user' }" @click="form.role = 'user'">
+              <i class="bi bi-person" /> Müştəri
+            </button>
+            <button type="button" :class="{ 'is-active': form.role === 'dealer' }" @click="form.role = 'dealer'">
+              <i class="bi bi-shop" /> Diler
+            </button>
+          </div>
+        </div>
+        <label class="field">
+          <span class="field__label">Ad, soyad</span>
+          <input v-model.trim="form.name" class="input" />
+        </label>
+        <label v-if="form.role === 'dealer'" class="field">
+          <span class="field__label">Şirkət</span>
+          <input v-model.trim="form.company" class="input" />
+        </label>
+        <label class="field">
+          <span class="field__label">E-poçt (giriş üçün)</span>
+          <input v-model.trim="form.email" class="input" type="email" />
+        </label>
+        <label class="field">
+          <span class="field__label">Telefon / WhatsApp</span>
+          <input v-model.trim="form.phone" class="input" placeholder="+994 50 000 00 00" />
+        </label>
+        <div class="field">
+          <span class="field__label">Şifrə</span>
+          <div class="password">
+            <input v-model="form.password" class="input" />
+            <button type="button" class="btn btn--light" title="Yeni şifrə yarat" @click="form.password = generate()">
+              <i class="bi bi-arrow-repeat" />
+            </button>
+          </div>
+        </div>
+        <div class="field is-wide">
+          <button type="submit" class="btn" :disabled="creating">
+            <i class="bi bi-check-lg" />
+            Hesabı yarat
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <section v-if="created" class="card block created">
+      <div class="card__body">
+        <p><b>Hazırdır.</b> Bu məlumatı müştəriyə göndərin:</p>
+        <pre>{{ createdText }}</pre>
+        <div class="actions">
+          <button type="button" class="btn btn--sm" @click="copy(createdText)"><i class="bi bi-clipboard" /> Kopyala</button>
+          <a v-if="created.phone" :href="whatsapp(created.phone, createdText)" target="_blank" rel="noopener" class="btn btn--light btn--sm">
+            <i class="bi bi-whatsapp" /> WhatsApp ilə göndər
+          </a>
+          <button type="button" class="btn btn--light btn--sm" @click="created = null">Bağla</button>
+        </div>
+      </div>
+    </section>
 
     <section class="card">
       <div class="toolbar">
@@ -97,6 +165,9 @@
                 </td>
                 <td>
                   <div class="table__actions">
+                    <button type="button" class="btn btn--light btn--icon btn--sm" title="Yeni şifrə" @click="resetPassword(user)">
+                      <i class="bi bi-key" />
+                    </button>
                     <button type="button" class="btn btn--danger btn--icon btn--sm" title="Sil" @click="remove(user)">
                       <i class="bi bi-trash" />
                     </button>
@@ -141,6 +212,15 @@ const DEALER_STATUSES: Record<string, { label: string; className: string }> = {
 
 let timer: ReturnType<typeof setTimeout> | undefined
 
+function generate(): string {
+  const letters = 'abcdefghjkmnpqrstuvwxyz23456789'
+  return Array.from({ length: 8 }, () => letters[Math.floor(Math.random() * letters.length)]).join('')
+}
+
+function emptyForm() {
+  return { role: 'user', name: '', company: '', email: '', phone: '', password: generate() }
+}
+
 export default defineComponent({
   name: 'UsersPage',
 
@@ -156,6 +236,10 @@ export default defineComponent({
       loading: true,
       openId: 0,
       userRequests: [] as RequestItem[],
+      formOpen: false,
+      creating: false,
+      form: emptyForm(),
+      created: null as { email: string; phone: string; password: string; name: string } | null,
       tabs: [
         { label: 'Hamısı', value: '' },
         { label: 'İstifadəçilər', value: 'user' },
@@ -165,12 +249,62 @@ export default defineComponent({
     }
   },
 
+  computed: {
+    createdText(): string {
+      if (!this.created) return ''
+      const site = String(useRuntimeConfig().public.siteUrl).replace(/\/$/, '')
+      return `Salam, ${this.created.name}!\nGLB Logistics hesabınız hazırdır.\nGiriş: ${site}/login\nE-poçt: ${this.created.email}\nŞifrə: ${this.created.password}`
+    },
+  },
+
   mounted() {
     this.load()
   },
 
   methods: {
     formatDate,
+    generate,
+
+    whatsapp(phone: string, text: string): string {
+      return `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`
+    },
+
+    async copy(text: string) {
+      try {
+        await navigator.clipboard.writeText(text)
+        useToastStore().show('Kopyalandı')
+      } catch {
+        useToastStore().show('Kopyalanmadı, mətni əl ilə seçin', 'error')
+      }
+    },
+
+    async create() {
+      this.creating = true
+      try {
+        const user = await this.$api<SiteUser>('/users', { method: 'POST', body: this.form })
+        this.items.unshift(user)
+        this.created = { name: user.name, email: user.email, phone: user.phone, password: this.form.password }
+        this.form = emptyForm()
+        this.formOpen = false
+        useToastStore().show('Hesab yaradıldı')
+      } catch (error) {
+        useToastStore().show(apiError(error), 'error')
+      }
+      this.creating = false
+    },
+
+    async resetPassword(user: SiteUser) {
+      const password = prompt(`${user.email} üçün yeni şifrə:`, generate())
+      if (!password) return
+
+      try {
+        await this.$api(`/users/${user.id}/password`, { method: 'PUT', body: { password } })
+        this.created = { name: user.name, email: user.email, phone: user.phone, password }
+        useToastStore().show('Şifrə dəyişdi')
+      } catch (error) {
+        useToastStore().show(apiError(error), 'error')
+      }
+    },
 
     value(event: Event): string {
       return (event.target as HTMLSelectElement).value
@@ -247,6 +381,28 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
+.block {
+  margin-bottom: 24px;
+}
+
+.password {
+  display: flex;
+  gap: 8px;
+}
+
+.created {
+  border-color: $primary;
+
+  pre {
+    padding: 12px;
+    margin: 10px 0;
+    font-family: inherit;
+    white-space: pre-wrap;
+    background: $bg;
+    border-radius: $radius;
+  }
+}
+
 .nowrap {
   white-space: nowrap;
 }

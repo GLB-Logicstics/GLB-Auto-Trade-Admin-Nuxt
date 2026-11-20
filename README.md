@@ -14,14 +14,33 @@ Giriş: backend `.env`-dəki `ADMIN_EMAIL` və `ADMIN_PASSWORD`.
 
 | Səhifə | Ünvan | Nə edir |
 |---|---|---|
-| İdarə paneli | `/` | Rəqəmlər, son müraciətlər |
-| Müraciətlər | `/requests` | Status, qeyd, WhatsApp, silmə |
-| Kolleksiyalar | `/collections/:name` | Siyahı, axtarış, saytda göstər/gizlət, silmə |
-| Redaktə | `/collections/:name/:id` (`new` — yeni) | Forma, şəkil yükləmə, slug, sıra |
-| Tariflər | `/tariffs` | Məzənnə, Copart rüsum cədvəlləri, əlavə xərclər |
-| Daşınma | `/shipping` | Copart / IAAI / Manheim meydançaları və qiymətləri |
-| Sayt məlumatı | `/site` | Əlaqə, loqo, sosial şəbəkələr |
-| Digər ayarlar | `/settings` | Qiymət qrafiki və izləmə nümunəsi (JSON) |
+| İdarə paneli | `/` | Rəqəmlər, istifadəçilər, təsdiq gözləyən dilerlər, son müraciətlər |
+| Müraciətlər | `/requests` | Status, məsul şəxs, qeyd, "mənə təyin olunanlar", WhatsApp |
+| İstifadəçilər | `/users` | Müştəri və diler hesabı yaratmaq, şifrə vermək (WhatsApp ilə göndər), bloklama, müraciətlər |
+| Avtomobil izləmə | `/collections/shipments` | VIN/lot üzrə daşınma mərhələləri, düymə və tarix seçimi ilə |
+| Diler klikləri | `/clicks` | Hər avtomobilin WhatsApp/zəng klikləri |
+| Kolleksiyalar | `/collections/:name` | Siyahı, axtarış, saytda göstər/gizlət, silmə, dilerin əlavə etdiyi avtomobillər |
+| Redaktə | `/collections/:name/:id` (`new` — yeni) | Forma, şəkil, slug, sıra, şəhər seçimi, EN/RU tərcümə tabları |
+| Hissə kateqoriyaları | `/collections/part_types` | Ehtiyat hissəsi növləri |
+| Tariflər | `/tariffs` | Məzənnə, Copart rüsum cədvəlləri, əlavə xərclər, son dəyişiklik tarixi |
+| Daşınma | `/shipping` | Meydançalar, qiymətlər, Excel-dən import |
+| Bazar qiymətləri | `/market-prices` | turbo.az / myauto.ge-dən avtomatik, "İndi yenilə", tapılmayanlar |
+| Sayt məlumatı | `/site` | Əlaqə, loqo, sosial şəbəkələr, tərcümələr |
+| Menyular | `/menus` | Üst menyu (alt menyu ilə) və footer linkləri |
+| Ölkə və şəhərlər | `/locations` | Filtrdə və formalarda görünən şəhərlər |
+| Dillər | `/languages` | Dil əlavə et, söndür, sırala |
+| Tərcümələr | `/translations` | Bütün interfeys mətnləri, axtarış, "tərcüməsi olmayanlar" |
+| Adminlər | `/admins` | Komanda üzvləri, rollar, şifrə |
+| Jurnal | `/audit` | Kim nəyi nə vaxt dəyişib |
+| GLB Helper qiymətləri | `/settings` | Lot səhifəsindəki 6 aylıq qrafik, model və ay üzrə |
+
+Menyu yalnız rolun icazəsi olan bölmələri göstərir. Menyular və Dillər yalnız developer üçündür.
+
+Formalarda JSON yoxdur: siyahılar, səhifə bölmələri və daşınma mərhələləri düymələrlə əlavə olunur, silinir və sıralanır (`components/form/ListInput.vue`, `SectionsInput.vue`, `StepsInput.vue`).
+
+Excel importu üçün `xlsx` (SheetJS) paketi `package.json`-dadır, `npm install` onu `cdn.sheetjs.com`-dan yükləyir.
+
+GitHub Pages: `.github/workflows/deploy.yml`. Repo → Settings → Variables: `API_BASE` (məs. `https://glb-api.onrender.com/api`) və `SITE_URL`.
 
 ## Kod
 
@@ -37,3 +56,5 @@ Giriş: backend `.env`-dəki `ADMIN_EMAIL` və `ADMIN_PASSWORD`.
 | `app/middleware/auth.global.ts` | Giriş etməyəni `/login`-ə yönləndirir |
 | `app/stores/` | `auth`, `toast` (bildirişlər), `ui` (mobil menyu) |
 | `app/utils/path.ts` | `dealer.name` kimi iç-içə sahələri oxuyur və yazır |
+| `app/utils/sheet.ts`, `components/form/SheetImport.vue` | Excel/CSV oxuma, sütun yoxlaması, xətalı sətirlər |
+| `app/plugins/03.me.client.ts` | Açılanda adminin rol və icazələrini yeniləyir |
