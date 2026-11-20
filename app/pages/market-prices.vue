@@ -199,11 +199,18 @@ export default defineComponent({
 
     async start() {
       try {
-        await this.$api('/market-sync', { method: 'POST' })
         this.sync.running = true
+        const result = await this.$api<{ done?: boolean, status?: SyncStatus }>('/market-sync', { method: 'POST' })
+        if (result.done && result.status) {
+          this.sync = result.status
+          this.load()
+          useToastStore().show('Bazar qiymətləri yeniləndi')
+          return
+        }
         useToastStore().show('Yeniləmə başladı')
         poll = setTimeout(() => this.loadSync(), 5000)
       } catch (error) {
+        this.sync.running = false
         useToastStore().show(apiError(error), 'error')
       }
     },
