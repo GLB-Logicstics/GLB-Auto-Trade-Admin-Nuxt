@@ -1,6 +1,6 @@
 <template>
   <form class="login" novalidate @submit.prevent="submit">
-    <img src="/images/logo.png" alt="GLB Logistics" class="login__logo" />
+    <img :src="`${$config.app.baseURL}images/logo.png`" alt="GLB Logistics" class="login__logo" />
     <h1>İdarə panelinə giriş</h1>
     <p class="login__text">Saytın məlumatlarını idarə etmək üçün daxil olun</p>
 

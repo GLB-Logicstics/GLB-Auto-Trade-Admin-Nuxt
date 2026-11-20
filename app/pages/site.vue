@@ -66,6 +66,52 @@
         </div>
       </section>
 
+      <section v-if="languages.length" class="card">
+        <div class="card__head">
+          <h2>Tərcümələr</h2>
+          <div class="tabs">
+            <button
+              v-for="language in languages"
+              :key="language.code"
+              type="button"
+              :class="{ 'is-active': lang === language.code }"
+              @click="lang = language.code"
+            >
+              {{ language.name }}
+            </button>
+          </div>
+        </div>
+        <div class="card__body form-grid">
+          <label class="field is-wide">
+            <span class="field__label">Haqqında (footer)</span>
+            <textarea
+              class="input input--area"
+              :value="getPath(site, `i18n.${lang}.about`)"
+              :placeholder="site.about"
+              @input="setPath(site, `i18n.${lang}.about`, value($event))"
+            />
+          </label>
+          <label class="field">
+            <span class="field__label">Ünvan</span>
+            <input
+              class="input"
+              :value="getPath(site, `contact.i18n.${lang}.address`)"
+              :placeholder="site.contact.address"
+              @input="setPath(site, `contact.i18n.${lang}.address`, value($event))"
+            />
+          </label>
+          <label class="field">
+            <span class="field__label">İş saatları</span>
+            <input
+              class="input"
+              :value="getPath(site, `contact.i18n.${lang}.workingHours`)"
+              :placeholder="site.contact.workingHours"
+              @input="setPath(site, `contact.i18n.${lang}.workingHours`, value($event))"
+            />
+          </label>
+        </div>
+      </section>
+
       <section class="card">
         <div class="card__head">
           <h2>Sosial şəbəkələr</h2>
@@ -114,7 +160,8 @@
 import { defineComponent } from 'vue'
 import { useToastStore } from '~/stores/toast'
 import { apiError } from '~/utils/format'
-import type { Setting } from '~/types'
+import { getPath, setPath } from '~/utils/path'
+import type { Language, Setting } from '~/types'
 
 interface SiteSettings {
   name: string
@@ -140,15 +187,25 @@ export default defineComponent({
   },
 
   data() {
-    return { site: null as SiteSettings | null, saving: false }
+    return { site: null as SiteSettings | null, saving: false, languages: [] as Language[], lang: '' }
   },
 
   async mounted() {
     const settings = await this.$api<Setting[]>('/settings')
     this.site = settings.find((item) => item.key === 'site')?.value as SiteSettings
+    const languages = await this.$api<Language[]>('/languages')
+    this.languages = languages.filter((language) => !language.is_default)
+    this.lang = this.languages[0]?.code || ''
   },
 
   methods: {
+    getPath,
+    setPath,
+
+    value(event: Event): string {
+      return (event.target as HTMLInputElement).value
+    },
+
     addSocial() {
       this.site?.socialLinks.push({ name: `link-${Date.now()}`, label: '', icon: 'bi-link-45deg', href: '' })
     },

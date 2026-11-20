@@ -165,6 +165,7 @@ export default defineComponent({
     },
 
     cell(item: CollectionItem, column: Column): string {
+      if (column.type === 'owner') return item.ownerEmail || 'Admin'
       const value = getPath(item.data, column.key)
       if (column.type === 'money') return formatMoney(value)
       if (column.type === 'option') return column.options?.find((option) => option.value === value)?.label || String(value ?? '')

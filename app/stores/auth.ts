@@ -10,6 +10,7 @@ export const useAuthStore = defineStore('auth', {
   getters: {
     loggedIn: (state) => !!state.token,
     initials: (state) => (state.admin ? state.admin.name.slice(0, 1).toUpperCase() : 'A'),
+    can: (state) => (area: string) => !!state.admin && (state.admin.permissions || []).includes(area),
   },
 
   actions: {

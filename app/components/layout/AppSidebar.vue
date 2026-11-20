@@ -4,7 +4,7 @@
 
     <aside class="sidebar" :class="{ 'is-open': sidebarOpen }">
       <NuxtLink to="/" class="sidebar__logo" @click="closeSidebar">
-        <img src="/images/logo-dark.png" alt="GLB Logistics" />
+        <img :src="`${$config.app.baseURL}images/logo-dark.png`" alt="GLB Logistics" />
         <span>Admin</span>
       </NuxtLink>
 
@@ -37,6 +37,7 @@
 import { defineComponent } from 'vue'
 import { mapActions, mapState } from 'pinia'
 import { collections } from '~/config/collections'
+import { useAuthStore } from '~/stores/auth'
 import { useUiStore } from '~/stores/ui'
 
 interface SidebarLink {
@@ -45,47 +46,74 @@ interface SidebarLink {
   icon: string
 }
 
-function collectionLinks(names: string[]): SidebarLink[] {
-  return collections
-    .filter((collection) => names.includes(collection.name))
-    .map((collection) => ({ label: collection.label, to: `/collections/${collection.name}`, icon: collection.icon }))
+interface SidebarGroup {
+  title: string
+  area: string
+  links: SidebarLink[]
 }
+
+function collectionLinks(names: string[]): SidebarLink[] {
+  return names
+    .map((name) => collections.find((collection) => collection.name === name))
+    .filter((collection) => !!collection)
+    .map((collection) => ({ label: collection!.label, to: `/collections/${collection!.name}`, icon: collection!.icon }))
+}
+
+const GROUPS: SidebarGroup[] = [
+  { title: 'Əsas', area: 'dashboard', links: [{ label: 'İdarə paneli', to: '/', icon: 'bi-grid-1x2' }] },
+  { title: 'Müraciətlər', area: 'requests', links: [{ label: 'Müraciətlər', to: '/requests', icon: 'bi-inbox' }] },
+  {
+    title: 'İstifadəçilər',
+    area: 'users',
+    links: [
+      { label: 'İstifadəçilər və dilerlər', to: '/users', icon: 'bi-people' },
+      { label: 'Diler klikləri', to: '/clicks', icon: 'bi-whatsapp' },
+    ],
+  },
+  { title: 'Avtomobillər', area: 'content', links: collectionLinks(['lots', 'cars', 'korea_cars', 'catalog']) },
+  { title: 'Ehtiyat hissələri', area: 'content', links: collectionLinks(['parts', 'part_types']) },
+  { title: 'Kontent', area: 'content', links: collectionLinks(['services', 'pages', 'news', 'hero_slides', 'brands']) },
+  {
+    title: 'Kalkulyator',
+    area: 'pricing',
+    links: [
+      { label: 'Tariflər və rüsumlar', to: '/tariffs', icon: 'bi-calculator' },
+      { label: 'Daşınma qiymətləri', to: '/shipping', icon: 'bi-truck' },
+      { label: 'Yerli bazar qiymətləri', to: '/market-prices', icon: 'bi-graph-up' },
+    ],
+  },
+  {
+    title: 'Ayarlar',
+    area: 'settings',
+    links: [
+      { label: 'Sayt məlumatı', to: '/site', icon: 'bi-building' },
+      { label: 'Menyular', to: '/menus', icon: 'bi-list' },
+      { label: 'Ölkə və şəhərlər', to: '/locations', icon: 'bi-geo-alt' },
+      { label: 'Digər ayarlar', to: '/settings', icon: 'bi-sliders' },
+    ],
+  },
+  {
+    title: 'Dillər',
+    area: 'translations',
+    links: [
+      { label: 'Dillər', to: '/languages', icon: 'bi-globe2' },
+      { label: 'Tərcümələr', to: '/translations', icon: 'bi-translate' },
+    ],
+  },
+  { title: 'Komanda', area: 'admins', links: [{ label: 'Adminlər və rollar', to: '/admins', icon: 'bi-shield-lock' }] },
+  { title: 'Jurnal', area: 'audit', links: [{ label: 'Əməliyyat jurnalı', to: '/audit', icon: 'bi-clock-history' }] },
+]
 
 export default defineComponent({
   name: 'AppSidebar',
 
-  data() {
-    return {
-      groups: [
-        {
-          title: 'Əsas',
-          links: [
-            { label: 'İdarə paneli', to: '/', icon: 'bi-grid-1x2' },
-            { label: 'Müraciətlər', to: '/requests', icon: 'bi-inbox' },
-          ],
-        },
-        { title: 'Avtomobillər', links: collectionLinks(['lots', 'cars', 'korea_cars', 'parts', 'catalog']) },
-        { title: 'Kontent', links: collectionLinks(['services', 'pages', 'news', 'hero_slides', 'brands']) },
-        {
-          title: 'Kalkulyator',
-          links: [
-            { label: 'Tariflər və rüsumlar', to: '/tariffs', icon: 'bi-calculator' },
-            { label: 'Daşınma qiymətləri', to: '/shipping', icon: 'bi-truck' },
-          ],
-        },
-        {
-          title: 'Ayarlar',
-          links: [
-            { label: 'Sayt məlumatı', to: '/site', icon: 'bi-building' },
-            { label: 'Digər ayarlar', to: '/settings', icon: 'bi-sliders' },
-          ],
-        },
-      ],
-    }
-  },
-
   computed: {
     ...mapState(useUiStore, ['sidebarOpen']),
+    ...mapState(useAuthStore, ['can']),
+
+    groups(): SidebarGroup[] {
+      return GROUPS.filter((group) => this.can(group.area))
+    },
   },
 
   methods: {

@@ -3,7 +3,10 @@
     <div class="page-head">
       <div>
         <h1>Tariflər və rüsumlar</h1>
-        <p>Bütün kalkulyatorlar bu rəqəmlərlə hesablayır</p>
+        <p>
+          Bütün kalkulyatorlar bu rəqəmlərlə hesablayır
+          <span v-if="updatedAt"> · son dəyişiklik: {{ formatDate(updatedAt) }}</span>
+        </p>
       </div>
       <div class="page-head__actions">
         <button type="button" class="btn" :disabled="saving || !tariffs" @click="save">
@@ -138,7 +141,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import { useToastStore } from '~/stores/toast'
-import { apiError } from '~/utils/format'
+import { apiError, formatDate } from '~/utils/format'
 import type { Setting } from '~/types'
 
 interface Tariffs {
@@ -172,6 +175,7 @@ export default defineComponent({
   data() {
     return {
       tariffs: null as Tariffs | null,
+      updatedAt: '',
       saving: false,
       tables: [
         { key: 'copartCleanFees', title: 'Secured fee — standart sənəd' },
@@ -184,10 +188,14 @@ export default defineComponent({
 
   async mounted() {
     const settings = await this.$api<Setting[]>('/settings')
-    this.tariffs = settings.find((item) => item.key === 'tariffs')?.value as Tariffs
+    const setting = settings.find((item) => item.key === 'tariffs')
+    this.tariffs = setting?.value as Tariffs
+    this.updatedAt = setting?.updated_at || ''
   },
 
   methods: {
+    formatDate,
+
     addExtra() {
       this.tariffs?.extraCosts.push({ id: `extra-${Date.now()}`, label: '', price: 0 })
     },
@@ -201,7 +209,8 @@ export default defineComponent({
 
       this.saving = true
       try {
-        await this.$api('/settings/tariffs', { method: 'PUT', body: { value: this.tariffs } })
+        const setting = await this.$api<Setting>('/settings/tariffs', { method: 'PUT', body: { value: this.tariffs } })
+        this.updatedAt = setting.updated_at
         useToastStore().show('Tariflər yadda saxlandı')
       } catch (error) {
         useToastStore().show(apiError(error), 'error')

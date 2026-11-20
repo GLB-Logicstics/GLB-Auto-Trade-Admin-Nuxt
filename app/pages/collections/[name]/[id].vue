@@ -22,7 +22,7 @@
 
     <div v-if="form" class="editor">
       <div class="editor__main">
-        <section v-for="group in config.groups" :key="group.title" class="card">
+        <section v-for="group in groups" :key="group.title" class="card">
           <div class="card__head"><h2>{{ group.title }}</h2></div>
           <div class="card__body form-grid">
             <FieldInput
@@ -31,6 +31,33 @@
               :field="field"
               :model-value="getPath(form, field.key)"
               @update:model-value="setPath(form, field.key, $event)"
+            />
+          </div>
+        </section>
+
+        <section v-if="translateFields.length && languages.length" class="card">
+          <div class="card__head">
+            <h2>Tərcümələr</h2>
+            <div class="tabs">
+              <button
+                v-for="language in languages"
+                :key="language.code"
+                type="button"
+                :class="{ 'is-active': lang === language.code }"
+                @click="lang = language.code"
+              >
+                {{ language.name }}
+              </button>
+            </div>
+          </div>
+          <div class="card__body form-grid">
+            <p class="field__help is-wide">Boş qalan sahədə saytda əsas dildəki mətn göstərilir.</p>
+            <FieldInput
+              v-for="field in translateFields"
+              :key="`${lang}-${field.key}`"
+              :field="field"
+              :model-value="getPath(form, `i18n.${lang}.${field.key}`)"
+              @update:model-value="setPath(form, `i18n.${lang}.${field.key}`, $event)"
             />
           </div>
         </section>
@@ -76,7 +103,13 @@ import { findCollection } from '~/config/collections'
 import { useToastStore } from '~/stores/toast'
 import { apiError, formatDate } from '~/utils/format'
 import { getPath, setPath } from '~/utils/path'
-import type { CollectionConfig, CollectionItem } from '~/types'
+import type { CollectionConfig, CollectionItem, Field, FieldGroup, Option, Setting } from '~/types'
+
+interface Language {
+  code: string
+  name: string
+  is_default: boolean
+}
 
 const SITE_PATHS: Record<string, string> = {
   lots: '/auction-lots/',
@@ -102,12 +135,26 @@ export default defineComponent({
       title: '',
       updatedAt: '',
       saving: false,
+      languages: [] as Language[],
+      lang: '',
+      locations: {} as Record<string, string[]>,
+      partTypes: [] as Option[],
     }
   },
 
   computed: {
     config(): CollectionConfig | undefined {
       return findCollection(String(this.$route.params.name))
+    },
+
+    groups(): FieldGroup[] {
+      if (!this.config) return []
+      return this.config.groups.map((group) => ({ ...group, fields: group.fields.map((field) => this.resolveField(field)) }))
+    },
+
+    translateFields(): Field[] {
+      if (!this.config) return []
+      return this.config.groups.flatMap((group) => group.fields.filter((field) => field.translate))
     },
 
     isNew(): boolean {
@@ -123,6 +170,7 @@ export default defineComponent({
 
   async mounted() {
     if (!this.config) return
+    this.loadExtras()
 
     if (this.isNew) {
       this.form = this.config.empty()
@@ -137,6 +185,42 @@ export default defineComponent({
     getPath,
     setPath,
     formatDate,
+
+    async loadExtras() {
+      const fields = this.config!.groups.flatMap((group) => group.fields)
+
+      if (fields.some((field) => field.translate)) {
+        const languages = await this.$api<Language[]>('/languages')
+        this.languages = languages.filter((language) => !language.is_default)
+        this.lang = this.languages[0]?.code || ''
+      }
+
+      if (fields.some((field) => field.optionsFrom === 'cities')) {
+        const settings = await this.$api<Setting[]>('/settings')
+        this.locations = (settings.find((setting) => setting.key === 'locations')?.value as Record<string, string[]>) || {}
+      }
+
+      if (fields.some((field) => field.optionsFrom === 'partTypes')) {
+        const items = await this.$api<CollectionItem[]>('/collections/part_types')
+        this.partTypes = items.map((item) => ({ label: String(item.data.label), value: String(item.data.value) }))
+      }
+    },
+
+    resolveField(field: Field): Field {
+      let options = field.options || []
+      if (field.optionsFrom === 'cities') {
+        const country = String((this.form && this.form.country) || 'aze')
+        options = (this.locations[country] || []).map((city) => ({ label: city, value: city }))
+      }
+      if (field.optionsFrom === 'partTypes' && this.partTypes.length) options = this.partTypes
+
+      const current = this.form ? String(getPath(this.form, field.key) ?? '') : ''
+      if (field.optionsFrom && current && !options.some((option) => option.value === current)) {
+        options = [{ label: current, value: current }, ...options]
+      }
+      if (field.optionsFrom === 'cities') options = [{ label: '— Seçin —', value: '' }, ...options]
+      return field.optionsFrom ? { ...field, options } : field
+    },
 
     fill(item: CollectionItem) {
       this.form = { ...this.config?.empty(), ...item.data }

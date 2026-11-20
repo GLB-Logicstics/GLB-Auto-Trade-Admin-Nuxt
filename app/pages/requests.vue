@@ -20,6 +20,11 @@
             {{ tab.label }}
           </button>
         </div>
+        <label class="switch">
+          <input v-model="mine" type="checkbox" @change="load" />
+          <span class="switch__track" />
+          Mənə təyin olunanlar
+        </label>
       </div>
 
       <div v-if="loading" class="empty"><i class="bi bi-hourglass-split" />Yüklənir...</div>
@@ -32,6 +37,7 @@
               <th>Müştəri</th>
               <th>Mövzu və mesaj</th>
               <th>Status</th>
+              <th>Məsul</th>
               <th>Qeyd</th>
               <th />
             </tr>
@@ -43,6 +49,7 @@
                 <b>{{ item.name }}</b>
                 <p><a :href="`tel:${item.phone}`">{{ item.phone }}</a></p>
                 <p v-if="item.email" class="muted">{{ item.email }}</p>
+                <span v-if="item.user_email" class="badge badge--primary"><i class="bi bi-person-check" /> Qeydiyyatlı</span>
               </td>
               <td class="message">
                 <b>{{ item.subject }}</b>
@@ -51,6 +58,16 @@
               <td>
                 <select class="input input--sm" :value="item.status" @change="update(item, { status: value($event) })">
                   <option v-for="option in statuses" :key="option.value" :value="option.value">{{ option.label }}</option>
+                </select>
+              </td>
+              <td>
+                <select
+                  class="input input--sm"
+                  :value="item.assigned_to || ''"
+                  @change="update(item, { assigned_to: Number(value($event)) || null })"
+                >
+                  <option value="">—</option>
+                  <option v-for="person in staff" :key="person.id" :value="person.id">{{ person.name }}</option>
                 </select>
               </td>
               <td>
@@ -103,6 +120,8 @@ export default defineComponent({
   data() {
     return {
       items: [] as RequestItem[],
+      staff: [] as { id: number; name: string }[],
+      mine: false,
       status: '',
       loading: true,
       statuses: requestStatuses,
@@ -110,8 +129,9 @@ export default defineComponent({
     }
   },
 
-  mounted() {
+  async mounted() {
     this.load()
+    this.staff = await this.$api<{ id: number; name: string }[]>('/staff')
   },
 
   methods: {
@@ -123,7 +143,7 @@ export default defineComponent({
 
     async load() {
       this.loading = true
-      this.items = await this.$api<RequestItem[]>('/requests', { query: { status: this.status } })
+      this.items = await this.$api<RequestItem[]>('/requests', { query: { status: this.status, mine: this.mine ? '1' : '' } })
       this.loading = false
     },
 
@@ -136,9 +156,14 @@ export default defineComponent({
       try {
         const updated = await this.$api<RequestItem>(`/requests/${item.id}`, {
           method: 'PUT',
-          body: { status: item.status, note: item.note, ...changes },
+          body: {
+            status: changes.status ?? item.status,
+            note: changes.note ?? item.note,
+            assignedTo: changes.assigned_to !== undefined ? changes.assigned_to : item.assigned_to,
+          },
         })
-        Object.assign(item, updated)
+        const person = this.staff.find((row) => row.id === updated.assigned_to)
+        Object.assign(item, updated, { assigned_name: person ? person.name : '' })
         useToastStore().show('Yeniləndi')
       } catch (error) {
         useToastStore().show(apiError(error), 'error')

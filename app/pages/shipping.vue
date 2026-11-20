@@ -22,6 +22,13 @@
       </form>
     </section>
 
+    <SheetImport ref="importer" class="add-card" :columns="importColumns" :busy="importing" @import="importRows">
+      <select v-model="importAuction" class="input import-auction">
+        <option v-for="option in auctions" :key="option.value" :value="option.value">{{ option.label }}</option>
+      </select>
+      <template #help>Eyni meydança varsa qiyməti yenilənir, yoxdursa əlavə olunur.</template>
+    </SheetImport>
+
     <section class="card">
       <div class="toolbar">
         <div class="tabs">
@@ -92,6 +99,7 @@ import { auctions } from '~/config/options'
 import { useToastStore } from '~/stores/toast'
 import { apiError, formatDate } from '~/utils/format'
 import type { ShippingRow } from '~/types'
+import type { SheetColumn } from '~/utils/sheet'
 
 let timer: ReturnType<typeof setTimeout> | undefined
 
@@ -111,6 +119,12 @@ export default defineComponent({
       auctions,
       tabs: [...auctions, { label: 'Hamısı', value: '' }],
       newRow: { auction: 'Copart', location: '', price: 0 },
+      importAuction: 'Copart',
+      importing: false,
+      importColumns: [
+        { key: 'location', label: 'Meydança', names: ['Meydança', 'Location', 'Yard', 'Ünvan'], type: 'text', required: true },
+        { key: 'price', label: 'Qiymət', names: ['Qiymət', 'Price', 'Qiymet', 'USD'], type: 'number' },
+      ] as SheetColumn[],
     }
   },
 
@@ -147,6 +161,24 @@ export default defineComponent({
       }
     },
 
+    async importRows(rows: Record<string, string | number>[]) {
+      this.importing = true
+      try {
+        const result = await this.$api<{ saved: number; skipped: number }>('/shipping/import', {
+          method: 'POST',
+          body: { auction: this.importAuction, rows },
+        })
+        const importer = this.$refs.importer as { clear: () => void }
+        importer.clear()
+        useToastStore().show(`${result.saved} sətir yükləndi${result.skipped ? `, ${result.skipped} keçildi` : ''}`)
+        this.auction = this.importAuction
+        this.load()
+      } catch (error) {
+        useToastStore().show(apiError(error), 'error')
+      }
+      this.importing = false
+    },
+
     async add() {
       try {
         await this.$api('/shipping', { method: 'POST', body: this.newRow })
@@ -176,6 +208,10 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
+.import-auction {
+  max-width: 160px;
+}
+
 .add-card {
   margin-bottom: 24px;
 }

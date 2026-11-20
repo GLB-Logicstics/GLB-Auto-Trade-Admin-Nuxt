@@ -129,6 +129,7 @@ export const collections: CollectionConfig[] = [
       { key: 'city', label: 'Şəhər' },
       { key: 'price', label: 'Qiymət', type: 'money' },
       { key: 'marketPrice', label: 'Bazar qiyməti', type: 'money' },
+      { key: 'owner', label: 'Əlavə edən', type: 'owner' },
     ],
     groups: [
       {
@@ -149,7 +150,7 @@ export const collections: CollectionConfig[] = [
           { key: 'oldPrice', label: 'Köhnə qiymət ($)', type: 'number' },
           { key: 'marketPrice', label: 'Yerli bazar qiyməti ($)', type: 'number' },
           { key: 'country', label: 'Ölkə', type: 'select', options: countries },
-          { key: 'city', label: 'Şəhər', type: 'text' },
+          { key: 'city', label: 'Şəhər', type: 'select', optionsFrom: 'cities' },
           { key: 'location', label: 'Ünvan', type: 'text' },
           { key: 'sold', label: 'Satılıb', type: 'checkbox' },
         ],
@@ -179,8 +180,8 @@ export const collections: CollectionConfig[] = [
       {
         title: 'Təsvir və media',
         fields: [
-          { key: 'features', label: 'Xüsusiyyətlər', type: 'lines', help: 'Hər sətirdə bir xüsusiyyət', wide: true },
-          { key: 'description', label: 'Təsvir', type: 'lines', help: 'Hər sətir ayrıca abzasdır', wide: true },
+          { key: 'features', label: 'Xüsusiyyətlər', type: 'lines', help: 'Hər sətirdə bir xüsusiyyət', wide: true, translate: true },
+          { key: 'description', label: 'Təsvir', type: 'lines', help: 'Hər sətir ayrıca abzasdır', wide: true, translate: true },
           { key: 'image', label: 'Əsas şəkil', type: 'image', wide: true },
           { key: 'images', label: 'Qalereya', type: 'images', wide: true },
         ],
@@ -275,7 +276,7 @@ export const collections: CollectionConfig[] = [
       { key: 'title', label: 'Ad' },
       { key: 'make', label: 'Marka' },
       { key: 'model', label: 'Model' },
-      { key: 'type', label: 'Növ', type: 'option', options: partTypes },
+      { key: 'type', label: 'Növ' },
       { key: 'price', label: 'Qiymət', type: 'money' },
     ],
     groups: [
@@ -283,20 +284,22 @@ export const collections: CollectionConfig[] = [
         title: 'Hissə',
         fields: [
           { key: 'title', label: 'Ad', type: 'text' },
-          { key: 'type', label: 'Növ', type: 'select', options: partTypes },
+          { key: 'type', label: 'Növ', type: 'select', options: partTypes, optionsFrom: 'partTypes' },
           { key: 'condition', label: 'Vəziyyət', type: 'select', options: partConditions },
           { key: 'make', label: 'Marka', type: 'text' },
           { key: 'model', label: 'Model', type: 'text' },
           { key: 'yearFrom', label: 'İldən', type: 'number' },
           { key: 'yearTo', label: 'İlədək', type: 'number' },
           { key: 'price', label: 'Qiymət ($)', type: 'number' },
-          { key: 'location', label: 'Yer', type: 'text' },
+          { key: 'country', label: 'Ölkə', type: 'select', options: countries },
+          { key: 'location', label: 'Şəhər', type: 'select', optionsFrom: 'cities' },
         ],
       },
     ],
     empty: () => ({
       title: '',
       type: 'engine',
+      country: 'aze',
       condition: 'İşlənmiş',
       make: '',
       model: '',
@@ -366,11 +369,11 @@ export const collections: CollectionConfig[] = [
       {
         title: 'Xidmət',
         fields: [
-          { key: 'title', label: 'Ad', type: 'text' },
+          { key: 'title', label: 'Ad', type: 'text', translate: true },
           { key: 'icon', label: 'İkon', type: 'text', help: 'Bootstrap Icons adı, məs. bi-truck' },
-          { key: 'short', label: 'Qısa təsvir', type: 'textarea', wide: true },
-          { key: 'description', label: 'Ətraflı təsvir', type: 'lines', help: 'Hər sətir ayrıca abzasdır', wide: true },
-          { key: 'steps', label: 'Mərhələlər', type: 'lines', help: 'Hər sətirdə bir mərhələ', wide: true },
+          { key: 'short', label: 'Qısa təsvir', type: 'textarea', wide: true, translate: true },
+          { key: 'description', label: 'Ətraflı təsvir', type: 'lines', help: 'Hər sətir ayrıca abzasdır', wide: true, translate: true },
+          { key: 'steps', label: 'Mərhələlər', type: 'lines', help: 'Hər sətirdə bir mərhələ', wide: true, translate: true },
         ],
       },
     ],
@@ -390,14 +393,15 @@ export const collections: CollectionConfig[] = [
       {
         title: 'Səhifə',
         fields: [
-          { key: 'title', label: 'Başlıq', type: 'text' },
-          { key: 'subtitle', label: 'Alt başlıq', type: 'textarea', wide: true },
+          { key: 'title', label: 'Başlıq', type: 'text', translate: true },
+          { key: 'subtitle', label: 'Alt başlıq', type: 'textarea', wide: true, translate: true },
           {
             key: 'sections',
             label: 'Bölmələr',
             type: 'json',
             help: 'Hər bölmə: { "title": "...", "text": ["abzas 1", "abzas 2"] }',
             wide: true,
+            translate: true,
           },
         ],
       },
@@ -418,9 +422,9 @@ export const collections: CollectionConfig[] = [
       {
         title: 'Xəbər',
         fields: [
-          { key: 'title', label: 'Başlıq', type: 'text', wide: true },
+          { key: 'title', label: 'Başlıq', type: 'text', wide: true, translate: true },
           { key: 'date', label: 'Tarix', type: 'text', help: 'Format: 02.03.2026' },
-          { key: 'text', label: 'Mətn', type: 'lines', help: 'Hər sətir ayrıca abzasdır', wide: true },
+          { key: 'text', label: 'Mətn', type: 'lines', help: 'Hər sətir ayrıca abzasdır', wide: true, translate: true },
         ],
       },
     ],
@@ -440,8 +444,8 @@ export const collections: CollectionConfig[] = [
       {
         title: 'Slayd',
         fields: [
-          { key: 'title', label: 'Başlıq', type: 'text', wide: true },
-          { key: 'description', label: 'Mətn', type: 'textarea', wide: true },
+          { key: 'title', label: 'Başlıq', type: 'text', wide: true, translate: true },
+          { key: 'description', label: 'Mətn', type: 'textarea', wide: true, translate: true },
         ],
       },
     ],
@@ -467,6 +471,29 @@ export const collections: CollectionConfig[] = [
       },
     ],
     empty: () => ({ name: '', logo: '' }),
+  },
+  {
+    name: 'part_types',
+    label: 'Hissə kateqoriyaları',
+    single: 'Kateqoriya',
+    icon: 'bi-tags',
+    hasSlug: false,
+    columns: [
+      { key: 'label', label: 'Ad' },
+      { key: 'value', label: 'Kod' },
+      { key: 'icon', label: 'İkon' },
+    ],
+    groups: [
+      {
+        title: 'Kateqoriya',
+        fields: [
+          { key: 'label', label: 'Ad', type: 'text', help: 'Saytda görünən ad. Tərcüməsi "Tərcümələr" bölməsindədir' },
+          { key: 'value', label: 'Kod', type: 'text', help: 'Latın hərfləri ilə, məs. engine. Hissələr bu koda bağlanır' },
+          { key: 'icon', label: 'İkon', type: 'text', help: 'Bootstrap Icons adı, məs. bi-gear' },
+        ],
+      },
+    ],
+    empty: () => ({ label: '', value: '', icon: 'bi-gear' }),
   },
 ]
 

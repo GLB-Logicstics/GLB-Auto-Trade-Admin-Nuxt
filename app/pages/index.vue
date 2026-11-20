@@ -24,6 +24,21 @@
           :note="`cəmi ${stats.requests.total}`"
         />
         <StatCard
+          to="/users"
+          icon="bi-people"
+          label="İstifadəçilər"
+          :value="stats.users.total"
+          :note="`${stats.users.dealers} diler`"
+        />
+        <StatCard
+          v-if="stats.users.pending"
+          to="/users?role=pending"
+          icon="bi-shop"
+          tone="accent"
+          label="Təsdiq gözləyən dilerlər"
+          :value="stats.users.pending"
+        />
+        <StatCard
           v-for="item in mainCounts"
           :key="item.name"
           :to="`/collections/${item.name}`"
