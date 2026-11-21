@@ -19,7 +19,8 @@
       <div class="card__body sync">
         <p>
           Sistem kataloqdakı və satışdakı hər avtomobil üçün turbo.az (Azərbaycan) və myauto.ge (Gürcüstan) elanlarına baxır və
-          orta qiyməti özü yazır. Ən azı 3 elan olmalıdır.
+          orta qiyməti özü yazır. Saytlar birbaşa cavab verməsə, qiyməti AI Google axtarışı ilə tapır. "Mənbə" sütununda qiymətin
+          haradan gəldiyi yazılır, ağlabatan görünməyən qiyməti silə bilərsiniz.
         </p>
         <p class="muted">
           Son yeniləmə: <b>{{ sync.lastRun ? formatDate(sync.lastRun) : 'hələ olmayıb' }}</b>
