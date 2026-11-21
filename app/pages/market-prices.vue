@@ -24,22 +24,14 @@
         </p>
         <p class="muted">
           Son yeniləmə: <b>{{ sync.lastRun ? formatDate(sync.lastRun) : 'hələ olmayıb' }}</b>
-          <template v-if="sync.results.length"> · {{ okCount }} qiymət tapıldı, {{ sync.results.length - okCount }} tapılmadı</template>
+          <template v-if="okCount"> · {{ okCount }} qiymət yeniləndi</template>
         </p>
         <div class="sync__buttons">
           <button type="button" class="btn" :disabled="sync.running" @click="start">
             <i class="bi" :class="sync.running ? 'bi-hourglass-split' : 'bi-arrow-repeat'" />
             {{ sync.running ? 'Yenilənir... (bir neçə dəqiqə)' : 'İndi yenilə' }}
           </button>
-          <button v-if="failed.length" type="button" class="btn btn--light" @click="showFailed = !showFailed">
-            <i class="bi bi-exclamation-circle" /> Tapılmayanlar ({{ failed.length }})
-          </button>
         </div>
-        <ul v-if="showFailed" class="sync__failed">
-          <li v-for="(item, index) in failed" :key="index">
-            <b>{{ item.source }}</b> · {{ item.make }} {{ item.model }} {{ item.year }} — <span class="muted">{{ item.error }}</span>
-          </li>
-        </ul>
       </div>
     </section>
 
@@ -144,17 +136,12 @@ export default defineComponent({
       countries,
       tabs: [{ label: 'Hamısı', value: '' }, ...countries],
       sync: { enabled: true, running: false, lastRun: '', results: [] } as SyncStatus,
-      showFailed: false,
     }
   },
 
   computed: {
     okCount(): number {
       return this.sync.results.filter((item) => !item.error).length
-    },
-
-    failed(): SyncResult[] {
-      return this.sync.results.filter((item) => item.error)
     },
   },
 
@@ -248,17 +235,6 @@ export default defineComponent({
   &__buttons {
     display: flex;
     gap: 10px;
-  }
-
-  &__failed {
-    max-height: 280px;
-    overflow: auto;
-    font-size: 13px;
-
-    li {
-      padding: 6px 0;
-      border-bottom: 1px solid $border;
-    }
   }
 }
 </style>
