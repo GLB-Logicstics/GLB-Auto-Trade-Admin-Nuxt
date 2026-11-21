@@ -18,9 +18,9 @@
       </div>
       <div class="card__body sync">
         <p>
-          Sistem kataloqdakı və satışdakı hər avtomobil üçün turbo.az (Azərbaycan) və myauto.ge (Gürcüstan) elanlarına baxır və
-          orta qiyməti özü yazır. Saytlar birbaşa cavab verməsə, qiyməti AI Google axtarışı ilə tapır. "Mənbə" sütununda qiymətin
-          haradan gəldiyi yazılır, ağlabatan görünməyən qiyməti silə bilərsiniz.
+          Sistem kataloqdakı və satışdakı hər avtomobil üçün Azərbaycan və Gürcüstan bazarında orta qiyməti AI ilə tapır: əvvəlcə
+          Google axtarışı ilə turbo.az və myauto.ge elanlarına baxır, elan az olsa təxmin edir. "Mənbə" sütununda qiymətin haradan
+          gəldiyi yazılır, ağlabatan görünməyən qiyməti silə bilərsiniz.
         </p>
         <p class="muted">
           Son yeniləmə: <b>{{ sync.lastRun ? formatDate(sync.lastRun) : 'hələ olmayıb' }}</b>
